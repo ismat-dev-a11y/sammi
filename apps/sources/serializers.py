@@ -13,7 +13,7 @@ class TechnologyShortSerializer(serializers.ModelSerializer):
 
 class SourceCodeListSerializer(serializers.ModelSerializer):
     """Ro'yxat ko'rinishi uchun — yengil serializer."""
-    technologies = TechnologyShortSerializer(many=True, read_only=True)
+    # technologies = TechnologyShortSerializer(many=True, read_only=True)
 
     class Meta:
         model = SourceCode

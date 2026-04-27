@@ -1,0 +1,207 @@
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import generics, filters
+from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.openapi import OpenApiParameter
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.pagination import PageNumberPagination
+from .models import Project, ProjectStep
+from .serializers import ProjectCreateUpdateSerializer, ProjectListSerializer, ProjectDetailSerializer, ProjectUpdateSerializer, ProjectStepActionSerializer, ProjectStepListSerializer, ProjectStepDetailSerializer
+from core.permissions import IsAdmin
+
+class ProjectCreateView(generics.CreateAPIView):
+    serializer_class = ProjectCreateUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    @extend_schema(
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'title': {'type': 'string'},
+                    'description': {'type': 'string'},
+                    'image': {'type': 'string', 'format': 'binary'},
+                    'difficulty': {'type': 'string', 'enum': ['beginner', 'intermediate', 'advanced']},
+                    'github_url': {'type': 'string', 'format': 'uri'},
+                    'demo_url': {'type': 'string', 'format': 'uri'},
+                    'technologies': {'type': 'array', 'items': {'type': 'integer'}},
+                    'is_published': {'type': 'boolean'}
+                },
+                'required': ['title', 'description']
+            }
+        },
+        responses={201: ProjectCreateUpdateSerializer}
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+    # def perform_create(self, serializer):
+    #     serializer.save(owner=self.request.user)
+
+
+class ProjectPagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+class ProjectListView(generics.ListAPIView):
+    """List view for published projects - accessible to all users"""
+    serializer_class = ProjectListSerializer
+    permission_classes = [AllowAny]
+    pagination_class = ProjectPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['difficulty', 'technologies']
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at', 'title']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        return Project.objects.filter(is_published=True).prefetch_related('technologies').order_by('-created_at')
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='difficulty',
+                type=OpenApiTypes.STR,
+                enum=['beginner', 'intermediate', 'advanced'],
+                description='Filter by difficulty level'
+            ),
+            OpenApiParameter(
+                name='technologies',
+                type=OpenApiTypes.INT,
+                description='Filter by technology ID (can be used multiple times)'
+            ),
+            OpenApiParameter(
+                name='search',
+                type=OpenApiTypes.STR,
+                description='Search in title and description'
+            ),
+            OpenApiParameter(
+                name='ordering',
+                type=OpenApiTypes.STR,
+                enum=['created_at', '-created_at', 'title', '-title'],
+                description='Ordering field'
+            ),
+            OpenApiParameter(
+                name='page',
+                type=OpenApiTypes.INT,
+                description='Page number'
+            ),
+            OpenApiParameter(
+                name='page_size',
+                type=OpenApiTypes.INT,
+                description='Number of items per page'
+            ),
+        ],
+        responses={200: ProjectListSerializer(many=True)}
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+class ProjectDetailView(generics.RetrieveAPIView):
+    """Detail view for a single project - accessible to all users"""
+    serializer_class = ProjectDetailSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        return Project.objects.filter(is_published=True).prefetch_related('technologies', 'features', 'steps')
+
+    @extend_schema(
+        responses={200: ProjectDetailSerializer}
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+class ProjectUpdateView(generics.UpdateAPIView):
+    """Update view for projects - admin only"""
+    serializer_class = ProjectUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    
+    def get_queryset(self):
+        return Project.objects.all().prefetch_related('technologies')
+
+    @extend_schema(
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'title': {'type': 'string'},
+                    'description': {'type': 'string'},
+                    'image': {'type': 'string', 'format': 'binary', 'description': 'Upload new image - leave empty to keep current'},
+                    'difficulty': {'type': 'string', 'enum': ['beginner', 'intermediate', 'advanced']},
+                    'github_url': {'type': 'string', 'format': 'uri'},
+                    'demo_url': {'type': 'string', 'format': 'uri'},
+                    'technologies': {'type': 'array', 'items': {'type': 'integer'}},
+                    'is_published': {'type': 'boolean'}
+                },
+            }
+        },
+        responses={200: ProjectUpdateSerializer}
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        """Handle PATCH requests with optional image field"""
+        # Ensure partial=True for PATCH requests
+        self.serializer_class.partial = True
+        return super().patch(request, *args, **kwargs)
+
+
+class ProjectDeleteView(generics.DestroyAPIView):
+    """Delete view for projects - admin only"""
+    serializer_class = ProjectDetailSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Project.objects.all()
+
+    @extend_schema(
+        responses={204: None}
+    )
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)
+
+# projectStep
+class ProjectStepView(generics.CreateAPIView):
+    serializer_class = ProjectStepActionSerializer
+
+    @extend_schema(
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'title':    {'type': 'string'},
+                    'duration': {'type': 'integer'},
+                    'order':    {'type': 'integer'},
+                    'video': {
+                        'type': 'string',
+                        'format': 'binary',          # ← shu "Choose File" ni chiqaradi
+                        'description': 'Upload step video (MP4, AVI, etc.)'
+                    },
+                }
+            }
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+class ProjectStepListView(generics.ListAPIView):
+    serializer_class = ProjectStepListSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        return ProjectStep.objects.all()
+
+class ProjectStepDetailView(generics.RetrieveAPIView):
+    serializer_class = ProjectStepDetailSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        return ProjectStep.objects.all()

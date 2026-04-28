@@ -8,9 +8,15 @@ def generate_otp():
     return str(random.randint(100000, 999999))
 
 
+def get_otp_key(email):
+    return f"otp_{email.lower().strip()}"
+
+
 def send_otp_email(email):
     otp = generate_otp()
-    cache.set(email, otp, timeout=120)
+    key = get_otp_key(email)
+
+    cache.set(key, otp, timeout=300)  # 5 minut
 
     send_mail(
         subject="Your OTP Code",
@@ -22,13 +28,14 @@ def send_otp_email(email):
 
 
 def verify_otp(email, otp):
-    cached_otp = cache.get(email)
+    key = get_otp_key(email)
+    cached_otp = cache.get(key)
 
     if cached_otp is None:
         return False
 
-    if cached_otp == otp:
-        cache.delete(email)
+    if str(cached_otp) == str(otp):
+        cache.delete(key)
         return True
 
     return False

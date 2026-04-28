@@ -5,8 +5,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from django.conf import settings
 from .models import User
-
-
+from .utils import send_otp_email, verify_otp
 
 
 class GoogleAuthSerializer(serializers.Serializer):
@@ -67,66 +66,6 @@ class GoogleAuthSerializer(serializers.Serializer):
         return user, created
 
 
-class UserRegistrationSerializer(serializers.ModelSerializer):
-    """User registration serializer"""
-    password = serializers.CharField(write_only=True, min_length=8)
-    password_confirm = serializers.CharField(write_only=True)
-
-    class Meta:
-        model = User
-        fields = ['email', 'full_name', 'password', 'password_confirm', 'country', 'language_code']
-
-    def validate_email(self, value):
-        """Email uniqueness validation"""
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Bu email allaqachon ro'yxatdan o'tgan.")
-        return value
-
-    def validate(self, attrs):
-        """Password confirmation validation"""
-        if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError("Parollar mos kelmadi.")
-        return attrs
-
-    def create(self, validated_data):
-        """Create new user"""
-        validated_data.pop('password_confirm')
-        user = User.objects.create_user(
-            email=validated_data['email'],
-            password=validated_data['password'],
-            full_name=validated_data.get('full_name', ''),
-            country=validated_data.get('country', ''),
-            language_code=validated_data.get('language_code', 'uz'),
-        )
-        return user
-
-
-class UserLoginSerializer(serializers.Serializer):
-    """User login serializer"""
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
-
-    def validate(self, attrs):
-        """Validate credentials"""
-        email = attrs.get('email')
-        password = attrs.get('password')
-
-        if email and password:
-            user = authenticate(request=self.context.get('request'),
-                              username=email, password=password)
-            
-            if not user:
-                raise serializers.ValidationError("Email yoki parol noto'g'ri.")
-            
-            if not user.is_active:
-                raise serializers.ValidationError("Hisob faol emas.")
-            
-            attrs['user'] = user
-            return attrs
-        else:
-            raise serializers.ValidationError("Email va parol kiritish shart.")
-
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model        = User
@@ -139,4 +78,26 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model  = User
         fields = ["full_name", "avatar_url", "country", "language_code"]
-    
+
+
+class SendEmailOTPSerializer(serializers.Serializer):  # ✅ 's' olib tashlandi
+    email = serializers.EmailField()
+
+    def validate(self, attrs):  # ✅ attrs ishlatildi
+        email = attrs.get('email')
+        send_otp_email(email)
+        return attrs
+
+
+class VerifyEmailOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField()
+
+    def validate(self, data):
+        email = data.get("email")
+        otp = data.get("otp")
+
+        if not verify_otp(email, otp):
+            raise serializers.ValidationError("OTP noto'g'ri yoki eskirgan")
+
+        return data

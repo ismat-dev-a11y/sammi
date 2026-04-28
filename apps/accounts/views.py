@@ -1,11 +1,16 @@
+from django.core.serializers import serialize
+from django.forms import EmailField
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, OpenApiResponse
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
-from .serializers import GoogleAuthSerializer, UserRegistrationSerializer, UserLoginSerializer, UserSerializer, UserUpdateSerializer
+from .serializers import GoogleAuthSerializer, UserSerializer, UserUpdateSerializer, SendEmailOTPSerializer, VerifyEmailOTPSerializer
 
 
 def _jwt_tokens(user):
@@ -63,69 +68,46 @@ class MeView(GenericAPIView):
         serializer.save()
         return Response(UserSerializer(request.user).data)
 
+@extend_schema(summary='OTP yuborish', tags=['Accounts'])
+class SendEmailOTPView(GenericAPIView):
+    serializer_class = SendEmailOTPSerializer  # ✅ shu yoq qolgan edi
 
-@extend_schema(summary='User registration', tags=['Accounts'])
-class RegisterView(GenericAPIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
-    serializer_class = UserRegistrationSerializer
-
-    @extend_schema(
-        request=UserRegistrationSerializer,
-        responses={
-            201: OpenApiResponse(description="User successfully registered"),
-            400: OpenApiResponse(description="Validation errors"),
-        },
-    )
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        user = serializer.save()
-        
-        return Response(
-            {
-                "user": UserSerializer(user).data,
-                "tokens": _jwt_tokens(user),
-                "message": "Foydalanuvchi muvaffaqiyatli ro'yxatdan o'tdi"
-            },
-            status=status.HTTP_201_CREATED
-        )
+        serializer = self.get_serializer(data=request.data)  # ✅ self.get_serializer
+
+        if serializer.is_valid():
+            return Response(
+                {"message": "OTP emailga yuborildi"},
+                status=status.HTTP_200_OK
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema(summary='User registration', tags=['Accounts'])
-class LoginView(GenericAPIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
-    serializer_class = UserLoginSerializer
+@extend_schema(summary='OTP tasdiqlash', tags=['Accounts'])
+class VerifyEmailOTPView(GenericAPIView):
+    serializer_class = VerifyEmailOTPSerializer  # ✅ shu ham
 
-    @extend_schema(
-        request=UserLoginSerializer,
-        responses={
-            200: OpenApiResponse(description="Login successful"),
-            401: OpenApiResponse(description="Invalid credentials"),
-        },
-    )
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        user = serializer.validated_data['user']
-        
-        # Reset is_new_user flag if it was True
-        if user.is_new_user:
-            user.is_new_user = False
-            user.save(update_fields=['is_new_user'])
-        
-        return Response(
-            {
-                "user": UserSerializer(user).data,
-                "tokens": _jwt_tokens(user),
-                "message": "Tizimga muvaffaqiyatli kirdingiz"
-            },
-            status=status.HTTP_200_OK
-        )
+        serializer = self.get_serializer(data=request.data)  # ✅ self.get_serializer
+
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            user, created = User.objects.get_or_create(email=email)
+
+            if created or user.is_new_user:
+                user.is_new_user = False
+                user.save(update_fields=['is_new_user'])
+
+            tokens = _jwt_tokens(user)
+
+            return Response(
+                {
+                    "message": "OTP tasdiqlandi",
+                    "refresh": tokens['refresh'],
+                    "access": tokens['access'],
+                },
+                status=status.HTTP_200_OK
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

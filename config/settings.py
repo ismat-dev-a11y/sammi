@@ -348,3 +348,22 @@ AWS_S3_ENDPOINT_URL     = 'http://' + os.getenv('MINIO_ENDPOINT')
 AWS_S3_FILE_OVERWRITE   = False
 AWS_DEFAULT_ACL         = 'public-read'
 AWS_QUERYSTRING_AUTH    = False
+
+
+
+# OTP 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "otp-cache",
+    }
+}
+
+# Email Backend
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = 'ismatbekismoilov2@gmail.com'
+EMAIL_HOST_PASSWORD = 'dalo idkf hdmc xqnn'

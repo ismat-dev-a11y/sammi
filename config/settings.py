@@ -275,20 +275,28 @@ GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default="")
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "APP": {
-            "client_id":     config("GOOGLE_CLIENT_ID",     default=""),
-            "secret":        config("GOOGLE_CLIENT_SECRET", default=""),
-            "key":           "",
+            "client_id":  config("GOOGLE_CLIENT_ID",     default=""),
+            "secret":     config("GOOGLE_CLIENT_SECRET", default=""),
+            "key":        "",
         },
-        "SCOPE":        ["profile", "email"],
-        "AUTH_PARAMS":  {"access_type": "online"},
+        "SCOPE":              ["profile", "email"],
+        "AUTH_PARAMS":        {"access_type": "online"},
         "OAUTH_PKCE_ENABLED": True,
-        "VERIFIED_EMAIL": True,
-    }
+        "VERIFIED_EMAIL":     True,
+    },
+
+    "github": {
+        "APP": {
+            "client_id":  config("GITHUB_CLIENT_ID",     default=""),
+            "secret":     config("GITHUB_CLIENT_SECRET", default=""),
+            "key":        "",
+        },
+        "SCOPE": ["user:email", "read:user"],
+    },
 }
 
-SOCIALACCOUNT_EMAIL_AUTHENTICATION         = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION              = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
-
 
 # ══════════════════════════════════════════
 #  SWAGGER / DRF SPECTACULAR
@@ -362,8 +370,8 @@ CACHES = {
 # Email Backend
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-
+EMAIL_PORT = 465          # 587 o'rniga
+EMAIL_USE_SSL = True      # EMAIL_USE_TLS o'rniga
+EMAIL_USE_TLS = False     # buni o'chirib qo'ying
 EMAIL_HOST_USER = 'ismatbekismoilov2@gmail.com'
-EMAIL_HOST_PASSWORD = 'dalo idkf hdmc xqnn'
+EMAIL_HOST_PASSWORD = 'hdiv hxlg etol ubgf'

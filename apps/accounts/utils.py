@@ -23,6 +23,7 @@ def send_otp_email(email):
         message=f"Your verification code is: {otp}",
         from_email=settings.EMAIL_HOST_USER,
         recipient_list=[email],
+        fail_silently=False,  # <--- SHU QATORNI QO'SHING
     )
     return otp
 

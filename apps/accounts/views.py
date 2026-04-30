@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 from .serializers import GoogleAuthSerializer, UserSerializer, UserUpdateSerializer, SendEmailOTPSerializer, VerifyEmailOTPSerializer
-
+from apps.accounts.guthub.serializers import GitHubAuthSerializer
 
 def _jwt_tokens(user):
     refresh = RefreshToken.for_user(user)
@@ -111,3 +111,34 @@ class VerifyEmailOTPView(GenericAPIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@extend_schema(summary="GitHub auth")
+class GitHubAuthView(GenericAPIView):
+    permission_classes     = [AllowAny]
+    authentication_classes = []
+    serializer_class       = GitHubAuthSerializer
+
+    @extend_schema(
+        request=GitHubAuthSerializer,
+        responses={
+            200: UserSerializer,
+            201: UserSerializer,
+            400: OpenApiResponse(description="Token yaroqsiz"),
+        },
+    )
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user, created = serializer.get_or_create_user()
+
+        return Response(
+            {
+                "user":    UserSerializer(user).data,
+                "tokens":  _jwt_tokens(user),
+                "created": created,
+            },
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )

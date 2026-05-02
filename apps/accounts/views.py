@@ -8,6 +8,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from django.contrib.auth import get_user_model
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 User = get_user_model()
 
 from .serializers import GoogleAuthSerializer, UserSerializer, UserUpdateSerializer, SendEmailOTPSerializer, VerifyEmailOTPSerializer
@@ -21,6 +23,7 @@ def _jwt_tokens(user):
     }
 
 extend_schema(summary='Google auth')
+@method_decorator(csrf_exempt, name='dispatch')
 class GoogleAuthView(GenericAPIView):
     permission_classes     = [AllowAny]
     authentication_classes = []
@@ -111,7 +114,7 @@ class VerifyEmailOTPView(GenericAPIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+@method_decorator(csrf_exempt, name='dispatch')
 @extend_schema(summary="GitHub auth")
 class GitHubAuthView(GenericAPIView):
     permission_classes     = [AllowAny]

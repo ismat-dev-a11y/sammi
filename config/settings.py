@@ -217,11 +217,13 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-# ══════════════════════════════════════════
-#  ALLAUTH
-# ══════════════════════════════════════════
+# =========================================
+# ALLAUTH
+# =========================================
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_LOGIN_METHODS = {"email"}

@@ -18,7 +18,7 @@ class Category(models.Model):
 
     class Meta:
         verbose_name_plural = "Categories"
-
+    
 
 class Technology(models.Model):
     CATEGORY_CHOICES = [
@@ -93,6 +93,9 @@ class Course(models.Model):
     def __str__(self):
         return self.title
 
+    class Meta:
+        ordering = ['-created_at']
+    
 
 
 

@@ -51,3 +51,7 @@ factory-boy==3.3.1            # Test uchun fake data
 # Production
 gunicorn==22.0.0              # WSGI server
 whitenoise==6.7.0             # Static files serving
+# supabase
+supabase==2.15.0supabase==2.15.0
+supabase-auth==2.29.0
+supabase-functions==2.29.0

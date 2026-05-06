@@ -11,7 +11,7 @@ from .models import Category, Technology, Course, Module, Lesson, Enrollment, Re
 class CourseCreateUpdateSerializers(serializers.ModelSerializer):
     image_url              = serializers.SerializerMethodField(read_only=True)
     preview_video_full_url = serializers.SerializerMethodField(read_only=True)
-    preview_video_url      = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+    # preview_video_url      = serializers.URLField(required=False, allow_blank=True, allow_null=True, write_only=True)
 
     image = serializers.ImageField(
         write_only=True,
@@ -27,7 +27,8 @@ class CourseCreateUpdateSerializers(serializers.ModelSerializer):
         many=True,
         queryset=Technology.objects.all(),
         required=False,
-        help_text="List of technology IDs (primary keys)"
+        allow_empty=True,
+        help_text="List of technology IDs (primary keys) as array: [1, 2, 3]"
     )
     
     class Meta:
@@ -39,16 +40,17 @@ class CourseCreateUpdateSerializers(serializers.ModelSerializer):
             'image',
             'image_url',
             'preview_video',
-            'preview_video_url',
+            # 'preview_video_url',
             'preview_video_full_url',
             'category',
             'technologies',
             'level',
             'price',
-            'is_free',
-            'is_new',
             'is_published',
         ]
+        # extra_kwargs = {
+        #     'preview_video_url': {'write_only': True}
+        # }
 
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_image_url(self, obj):
@@ -67,6 +69,27 @@ class CourseCreateUpdateSerializers(serializers.ModelSerializer):
             except (ValueError, AttributeError):
                 return None
         return None
+
+    def validate_technologies(self, value):
+        """
+        Validate technologies field to ensure it's a proper list of technology IDs.
+        """
+        if value is None:
+            return []
+        
+        if not isinstance(value, list):
+            raise serializers.ValidationError(
+                "Technologies must be a list of technology IDs. Example: [1, 2, 3]"
+            )
+        
+        # Check if all items are valid Technology objects
+        for tech in value:
+            if not isinstance(tech, Technology):
+                raise serializers.ValidationError(
+                    f"Invalid technology ID: {tech}. Must be a valid Technology primary key."
+                )
+        
+        return value
 
     # ✅ Unique slug yaratish
     def generate_unique_slug(self, title, exclude_pk=None):
@@ -111,13 +134,10 @@ class CourseListSerializer(serializers.ModelSerializer):
             'description',
             'image_url',
             'preview_video_url_full',
-            'preview_video_url',
             'category_name',
             'technologies_list',
             'level',
             'price',
-            'is_free',
-            'is_new',
         ]
 
     @extend_schema_field(serializers.URLField(allow_null=True))
@@ -150,13 +170,11 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'image_url',
-            'preview_video_url',
             'preview_video_url_full',
             'category_name',
             'technologies_list',
             'level',
             'price',
-            'is_free',
             'rating',
             'reviews_count',
             'lessons_count',
@@ -167,9 +185,11 @@ class CourseDetailSerializer(serializers.ModelSerializer):
     def get_image_url(self, obj):
         return obj.image.url if obj.image else None
 
-    @extend_schema_field(serializers.URLField(allow_null=True))
+    @extend_schema_field(serializers.URLField())
     def get_preview_video_url_full(self, obj):
-        return obj.preview_video.url if obj.preview_video else None
+        if obj.preview_video_url:
+            return obj.preview_video_url
+        return None
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_technologies_list(self, obj):
@@ -236,15 +256,16 @@ class CategoryDetailSerializer(serializers.ModelSerializer):
 class TechnologyCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Technology
-        fields = ['id', 'name']
+        fields = ['id', 'category', 'label', 'value', 'description']
 
 
 class TechnologyListSerializer(serializers.ModelSerializer):
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
     courses_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Technology
-        fields = ['id', 'name', 'courses_count']
+        fields = ['id', 'category', 'category_display', 'label', 'value', 'courses_count']
 
     @extend_schema_field(serializers.IntegerField())
     def get_courses_count(self, obj):
@@ -252,12 +273,13 @@ class TechnologyListSerializer(serializers.ModelSerializer):
 
 
 class TechnologyDetailSerializer(serializers.ModelSerializer):
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
     courses_count = serializers.SerializerMethodField()
     courses = serializers.SerializerMethodField()
 
     class Meta:
         model = Technology
-        fields = ['id', 'name', 'courses_count', 'courses']
+        fields = ['id', 'category', 'category_display', 'label', 'value', 'description', 'created_at', 'courses_count', 'courses']
 
     @extend_schema_field(serializers.IntegerField())
     def get_courses_count(self, obj):
@@ -267,6 +289,15 @@ class TechnologyDetailSerializer(serializers.ModelSerializer):
     def get_courses(self, obj):
         courses = obj.courses.filter(is_published=True)
         return CourseListSerializer(courses, many=True).data
+
+
+class TechnologyCategorySerializer(serializers.Serializer):
+    """
+    Serializer for returning technologies grouped by category 
+    in the format requested by the user.
+    """
+    label = serializers.CharField()
+    options = serializers.ListField(child=serializers.DictField())
 
 
 # Module Serializers

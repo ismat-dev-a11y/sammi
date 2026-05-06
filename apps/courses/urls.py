@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     CourseCreateView, CourseListView, CourseUpdateView, CourseDetailView, CourseDeleteView,
     CategoryCreateView, CategoryListView, CategoryUpdateView, CategoryDetailView, CategoryDeleteView,
-    TechnologyCreateView, TechnologyListView, TechnologyUpdateView, TechnologyDetailView, TechnologyDeleteView,
+    TechnologyCreateView, TechnologyListView, TechnologyUpdateView, TechnologyDetailView, TechnologyDeleteView, TechnologyGroupedView,
     ModuleCreateView, ModuleListView, ModuleUpdateView, ModuleDetailView, ModuleDeleteView,
     LessonCreateView, LessonListView, LessonUpdateView, LessonDetailView, LessonDeleteView,
     EnrollmentCreateView, EnrollmentListView, EnrollmentDetailView, EnrollmentDeleteView,
@@ -31,6 +31,7 @@ urlpatterns = [
     path('technology/<int:pk>/', TechnologyUpdateView.as_view()),
     path('technology/detail/<int:pk>/', TechnologyDetailView.as_view()),
     path('technology/delete/<int:pk>/', TechnologyDeleteView.as_view()),
+    path('technology/grouped', TechnologyGroupedView.as_view()),
     
     # Module URLs
     path('modules/', ModuleCreateView.as_view()),

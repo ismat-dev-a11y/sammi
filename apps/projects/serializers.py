@@ -6,9 +6,11 @@ from drf_spectacular.types import OpenApiTypes
 
 
 class TechnologySerializers(serializers.ModelSerializer):
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    
     class Meta:
         model = Technology
-        fields = ['id', 'name']
+        fields = ['id', 'category', 'category_display', 'label', 'value']
         read_only_fields = ['id']
         
 class ProjectCreateUpdateSerializer(serializers.ModelSerializer):
@@ -24,7 +26,7 @@ class ProjectCreateUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'title', 'description', 'image', 'image_url',
             'difficulty', 'github_url', 'demo_url', 
-            'technologies', 'is_published'
+            'technologies',
         ]
         read_only_fields = ['id', 'slug', 'created_at']
 
@@ -51,7 +53,7 @@ class ProjectUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'title', 'description', 'image', 'image_url',
             'difficulty', 'github_url', 'demo_url', 
-            'technologies', 'is_published'
+            'technologies'
         ]
         read_only_fields = ['id', 'slug', 'created_at']
 
@@ -151,7 +153,7 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
             'id', 'title', 'slug', 'description', 'image_url',
             'difficulty', 'difficulty_display', 'github_url', 'demo_url',
             'technologies', 'created_at', 'total_steps', 'total_duration_str',
-            'features', 'steps', 'is_published'
+            'features', 'steps'
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'total_steps', 'total_duration_str']
 

@@ -1,9 +1,11 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.types import OpenApiTypes
 from .models import Course, Category, Technology, Module, Lesson, Enrollment, LessonProgress, Review
+from .utils import get_technologies_by_category
 from .serializers import (
     CourseCreateUpdateSerializers, CourseListSerializer, CourseDetailSerializer,
     CategoryCreateUpdateSerializer, CategoryListSerializer, CategoryDetailSerializer,
@@ -31,14 +33,12 @@ class CourseCreateView(generics.CreateAPIView):
                     'description': {'type': 'string'},
                     'image': {'type': 'string', 'format': 'binary'},
                     'preview_video': {'type': 'string', 'format': 'binary'},
-                    'preview_video_url': {'type': 'string', 'format': 'uri'},
+                    # 'preview_video_url': {'type': 'string', 'format': 'uri'},
                     'category': {'type': 'integer'},
-                    'technologies': {'type': 'array', 'items': {'type': 'integer'}},
+                    'technologies': {'type': 'array', 'items': {'type': 'integer'}, 'description': 'List of technology IDs as array: [1, 2, 3]'},
                     'level': {'type': 'string', 'enum': ['beginner', 'intermediate', 'advanced']},
-                    'language': {'type': 'string'},
+                    # 'language': {'type': 'string'},
                     'price': {'type': 'number'},
-                    'is_free': {'type': 'boolean'},
-                    'is_new': {'type': 'boolean'},
                     'is_published': {'type': 'boolean'}
                 },
                 'required': ['title', 'description', 'category']
@@ -69,14 +69,12 @@ class CourseUpdateView(generics.UpdateAPIView):
                     'description': {'type': 'string'},
                     'image': {'type': 'string', 'format': 'binary'},
                     'preview_video': {'type': 'string', 'format': 'binary'},
-                    'preview_video_url': {'type': 'string', 'format': 'uri'},
+                    # 'preview_video_url': {'type': 'string', 'format': 'uri'},
                     'category': {'type': 'integer'},
-                    'technologies': {'type': 'array', 'items': {'type': 'integer'}},
+                    'technologies': {'type': 'array', 'items': {'type': 'integer'}, 'description': 'List of technology IDs as array: [1, 2, 3]'},
                     'level': {'type': 'string', 'enum': ['beginner', 'intermediate', 'advanced']},
-                    'language': {'type': 'string'},
+                    # 'language': {'type': 'string'},
                     'price': {'type': 'number'},
-                    'is_free': {'type': 'boolean'},
-                    'is_new': {'type': 'boolean'},
                     'is_published': {'type': 'boolean'}
                 }
             }
@@ -160,6 +158,44 @@ class TechnologyDeleteView(generics.DestroyAPIView):
     queryset = Technology.objects.all()
     permission_classes = [IsAuthenticated, IsAdmin]
     serializer_class = TechnologyCreateUpdateSerializer
+
+
+class TechnologyGroupedView(generics.GenericAPIView):
+    """
+    Returns technologies grouped by category in the format:
+    [
+        {
+            "label": "Frontend",
+            "options": [
+                {"label": "React", "value": "react"},
+                {"label": "Vue", "value": "vue"}
+            ]
+        },
+        {
+            "label": "Backend",
+            "options": [
+                {"label": "Node.js", "value": "node"},
+                {"label": "Django", "value": "django"}
+            ]
+        }
+    ]
+    """
+    permission_classes = []
+    
+    @extend_schema(
+        summary="Get technologies grouped by category",
+        description="Returns technologies in the format with categories and options as requested",
+        responses={200: {"type": "array", "items": {"type": "object", "properties": {
+            "label": {"type": "string"},
+            "options": {"type": "array", "items": {"type": "object", "properties": {
+                "label": {"type": "string"},
+                "value": {"type": "string"}
+            }}}}}}
+        }
+    )
+    def get(self, request):
+        technologies = get_technologies_by_category()
+        return Response(technologies)
 
 
 # Module Views

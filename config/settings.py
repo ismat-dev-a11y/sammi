@@ -221,10 +221,11 @@ CORS_ALLOW_HEADERS = [
 #  ALLAUTH
 # ══════════════════════════════════════════
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-ACCOUNT_UNIQUE_EMAIL              = True
-ACCOUNT_EMAIL_VERIFICATION        = "none"
-ACCOUNT_LOGIN_METHODS             = {"email"}
-ACCOUNT_SIGNUP_FIELDS             = ["email*", "password1*", "password2*"]
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 
 REST_AUTH_SETTINGS = {
     "USE_JWT":                 True,

@@ -65,7 +65,7 @@ class CourseCreateUpdateSerializers(serializers.ModelSerializer):
     def get_preview_video_full_url(self, obj):
         if obj.preview_video:
             try:
-                return obj.preview_video.url
+                return obj.preview_video.url if obj.preview_video else None
             except (ValueError, AttributeError):
                 return None
         return None
@@ -188,9 +188,9 @@ class CourseDetailSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.URLField())
     def get_preview_video_url_full(self, obj):
         if obj.preview_video:
-            return obj.preview_video
+            return obj.preview_video.url if obj.preview_video else None
         return None
-        
+
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_technologies_list(self, obj):
         return [tech.name for tech in obj.technologies.all()]

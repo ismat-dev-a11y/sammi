@@ -150,7 +150,7 @@ class CourseListSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_technologies_list(self, obj):
-        return [tech.name for tech in obj.technologies.all()]
+        return [tech.label for tech in obj.technologies.all()]
 
 
 class CourseDetailSerializer(serializers.ModelSerializer):

@@ -114,7 +114,7 @@ class Module(models.Model):
 class Lesson(models.Model):
     module     = models.ForeignKey(Module, on_delete=models.CASCADE, related_name="lessons")
     title      = models.CharField(max_length=255)
-    video_url  = models.URLField()
+    video      = models.FileField(upload_to='lessons/videos/', blank=True, null=True)  # ← MinIO
     duration   = models.PositiveIntegerField(default=0)
     order      = models.PositiveIntegerField(default=0)
     is_preview = models.BooleanField(default=False)
@@ -124,7 +124,6 @@ class Lesson(models.Model):
 
     class Meta:
         ordering = ["order"]
-
 
 class Enrollment(models.Model):
     user        = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="enrollments")

@@ -11,16 +11,16 @@ class Project(models.Model):
         ("advanced",     "Murakkab"),
     ]
 
-    title        = models.CharField(max_length=255)
-    slug         = models.SlugField(unique=True, blank=True)
-    description  = models.TextField()
-    image        = models.ImageField(upload_to="projects/images/")
-    difficulty   = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES)
-    github_url   = models.URLField(blank=True)
-    demo_url     = models.URLField(blank=True)
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True)
+    description = models.TextField()
+    image = models.ImageField(upload_to="projects/images/")
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES)
+    github_url = models.URLField(blank=True)
+    demo_url = models.URLField(blank=True)
     technologies = models.ManyToManyField(Technology, blank=True, related_name="projects")
     is_published = models.BooleanField(default=False)
-    created_at   = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     @property
     def total_steps(self):

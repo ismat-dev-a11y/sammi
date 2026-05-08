@@ -231,11 +231,26 @@ class ModuleDeleteView(generics.DestroyAPIView):
 
 
 # Lesson Views
+@extend_schema(
+    request={
+        'multipart/form-data': {
+            'type': 'object',
+            'properties': {
+                'module':      {'type': 'integer'},
+                'title':       {'type': 'string'},
+                'video':       {'type': 'string', 'format': 'binary'},  # ← shu kerak
+                'duration':    {'type': 'integer'},
+                'order':       {'type': 'integer'},
+                'is_preview':  {'type': 'boolean'},
+            }
+        }
+    }
+)
 class LessonCreateView(generics.CreateAPIView):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonCreateUpdateSerializer
+    queryset           = Lesson.objects.all()
+    serializer_class   = LessonCreateUpdateSerializer
     permission_classes = [IsAdmin, IsAuthenticated]
-
+    parser_classes     = [MultiPartParser, FormParser]
 
 class LessonListView(generics.ListAPIView):
     queryset = Lesson.objects.all()

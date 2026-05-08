@@ -8,6 +8,7 @@ from drf_spectacular.utils import extend_schema_field
 from drf_spectacular.types import OpenApiTypes
 from .models import Category, Technology, Course, Module, Lesson, Enrollment, Review, LessonProgress
 
+from utils.minio_client import upload_video_to_minio
 
 class CourseCreateUpdateSerializers(serializers.ModelSerializer):
     image_url              = serializers.SerializerMethodField(read_only=True)
@@ -342,24 +343,73 @@ class ModuleDetailSerializer(serializers.ModelSerializer):
 
 # Lesson Serializers
 class LessonCreateUpdateSerializer(serializers.ModelSerializer):
+    video = serializers.FileField(
+        write_only=True,
+        required=False,
+        help_text="Upload lesson video (MP4, etc.)"
+    )
+    video_url = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Lesson
-        fields = ['id', 'module', 'title', 'video_url', 'duration', 'order', 'is_preview']
+        fields = [
+            'id', 'module', 'title', 'video', 'video_url',
+            'duration', 'order', 'is_preview'
+        ]
+        read_only_fields = ['id']
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_video_url(self, obj):
+        if obj.video:
+            try:
+                return obj.video.url
+            except Exception:
+                return f"http://84.247.165.177:9000/sammi-media/{obj.video.name}"
+        return None
+
+    def create(self, validated_data):
+        video = validated_data.pop('video', None)
+        lesson = Lesson.objects.create(**validated_data)
+        if video:
+            lesson.video = upload_video_to_minio(video)
+            lesson.save()
+        return lesson
+
+    def update(self, instance, validated_data):
+        video = validated_data.pop('video', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if video:
+            instance.video = upload_video_to_minio(video)
+        instance.save()
+        return instance
 
 
 class LessonListSerializer(serializers.ModelSerializer):
-    module_title = serializers.CharField(source='module.title', read_only=True)
-    course_title = serializers.CharField(source='module.course.title', read_only=True)
+    module_title       = serializers.CharField(source='module.title', read_only=True)
+    course_title       = serializers.CharField(source='module.course.title', read_only=True)
     duration_formatted = serializers.SerializerMethodField()
+    video_url          = serializers.SerializerMethodField(read_only=True)  # ← qo'shildi
 
     class Meta:
         model = Lesson
         fields = ['id', 'module', 'module_title', 'course_title', 'title', 'video_url',
-                 'duration', 'duration_formatted', 'order', 'is_preview']
+                  'duration', 'duration_formatted', 'order', 'is_preview']
+        #                          ↑ faqat bir marta
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_video_url(self, obj):
+        if obj.video:
+            endpoint = settings.AWS_S3_ENDPOINT_URL.rstrip('/')
+            bucket   = settings.AWS_STORAGE_BUCKET_NAME
+            name     = str(obj.video).lstrip('/')
+            return f"{endpoint}/{bucket}/{name}"
+        return None
+
 
     @extend_schema_field(serializers.CharField())
     def get_duration_formatted(self, obj):
-        hours = obj.duration // 60
+        hours   = obj.duration // 60
         minutes = obj.duration % 60
         if hours > 0:
             return f"{hours}h {minutes}m"
@@ -367,23 +417,36 @@ class LessonListSerializer(serializers.ModelSerializer):
 
 
 class LessonDetailSerializer(serializers.ModelSerializer):
-    module_title = serializers.CharField(source='module.title', read_only=True)
-    course_title = serializers.CharField(source='module.course.title', read_only=True)
+    module_title       = serializers.CharField(source='module.title', read_only=True)
+    course_title       = serializers.CharField(source='module.course.title', read_only=True)
     duration_formatted = serializers.SerializerMethodField()
+    video_url          = serializers.SerializerMethodField(read_only=True)  # ← qo'shildi
 
     class Meta:
         model = Lesson
         fields = ['id', 'module', 'module_title', 'course_title', 'title', 'video_url',
-                 'duration', 'duration_formatted', 'order', 'is_preview']
+                  'duration', 'duration_formatted', 'order', 'is_preview']
+
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_video_url(self, obj):
+        if obj.video:
+            name = str(obj.video.name)
+            # DB da to'liq URL saqlangan (eski)
+            if name.startswith('http'):
+                return name
+            # DB da faqat path saqlangan (yangi)
+            endpoint = settings.AWS_S3_ENDPOINT_URL.rstrip('/')
+            bucket   = settings.AWS_STORAGE_BUCKET_NAME
+            return f"{endpoint}/{bucket}/{name.lstrip('/')}"
+        return None
 
     @extend_schema_field(serializers.CharField())
     def get_duration_formatted(self, obj):
-        hours = obj.duration // 60
+        hours   = obj.duration // 60
         minutes = obj.duration % 60
         if hours > 0:
             return f"{hours}h {minutes}m"
         return f"{minutes}m"
-
 
 # Enrollment Serializers
 class EnrollmentCreateSerializer(serializers.ModelSerializer):

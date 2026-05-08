@@ -1,4 +1,5 @@
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Sum
 from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
@@ -181,7 +182,7 @@ class TechnologyGroupedView(generics.GenericAPIView):
     ]
     """
     permission_classes = []
-    
+
     @extend_schema(
         summary="Get technologies grouped by category",
         description="Returns technologies in the format with categories and options as requested",

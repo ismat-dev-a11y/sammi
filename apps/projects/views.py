@@ -1,4 +1,6 @@
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.db.models import Count, Sum
+from django.db.models.functions import Coalesce
 from rest_framework import generics, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
@@ -40,12 +42,10 @@ class ProjectCreateView(generics.CreateAPIView):
     # def perform_create(self, serializer):
     #     serializer.save(owner=self.request.user)
 
-
 class ProjectPagination(PageNumberPagination):
     page_size = 12
     page_size_query_param = 'page_size'
     max_page_size = 100
-
 
 class ProjectListView(generics.ListAPIView):
     """List view for published projects - accessible to all users"""
@@ -59,7 +59,10 @@ class ProjectListView(generics.ListAPIView):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        return Project.objects.filter(is_published=True).prefetch_related('technologies').order_by('-created_at')
+        return Project.objects.filter(is_published=True).prefetch_related('technologies').annotate(
+        total_steps=Count('steps'),
+        total_duration=Coalesce(Sum('steps__duration'), 0)
+    ).order_by('-created_at')
 
     @extend_schema(
         parameters=[
@@ -106,7 +109,7 @@ class ProjectDetailView(generics.RetrieveAPIView):
     """Detail view for a single project - accessible to all users"""
     serializer_class = ProjectDetailSerializer
     permission_classes = [AllowAny]
-    
+
     def get_queryset(self):
         return Project.objects.filter(is_published=True).prefetch_related('technologies', 'features', 'steps')
 
@@ -122,7 +125,7 @@ class ProjectUpdateView(generics.UpdateAPIView):
     serializer_class = ProjectUpdateSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    
+
     def get_queryset(self):
         return Project.objects.all().prefetch_related('technologies')
 
@@ -158,7 +161,7 @@ class ProjectDeleteView(generics.DestroyAPIView):
     """Delete view for projects - admin only"""
     serializer_class = ProjectDetailSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         return Project.objects.all()
 
@@ -195,13 +198,13 @@ class ProjectStepView(generics.CreateAPIView):
 class ProjectStepListView(generics.ListAPIView):
     serializer_class = ProjectStepListSerializer
     permission_classes = [AllowAny]
-    
+
     def get_queryset(self):
         return ProjectStep.objects.all()
 
 class ProjectStepDetailView(generics.RetrieveAPIView):
     serializer_class = ProjectStepDetailSerializer
     permission_classes = [AllowAny]
-    
+
     def get_queryset(self):
         return ProjectStep.objects.all()

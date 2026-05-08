@@ -13,8 +13,8 @@ load_dotenv()
 # ══════════════════════════════════════════
 #  CORE
 # ══════════════════════════════════════════
-SECRET_KEY    = config("SECRET_KEY")
-DEBUG         = config("DEBUG", default=False, cast=bool)
+SECRET_KEY = config("SECRET_KEY")
+DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost").split(",")
 
 # ══════════════════════════════════════════
@@ -221,11 +221,10 @@ CORS_ALLOW_HEADERS = [
 # ALLAUTH
 # =========================================
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 
 REST_AUTH_SETTINGS = {
     "USE_JWT":                 True,

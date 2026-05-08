@@ -1,5 +1,6 @@
 import ast
 import uuid
+from django.db import models
 from django.utils.text import slugify
 from rest_framework import serializers
 from django.db.models import Sum
@@ -30,7 +31,7 @@ class CourseCreateUpdateSerializers(serializers.ModelSerializer):
         allow_empty=True,
         help_text="List of technology IDs (primary keys) as array: [1, 2, 3]"
     )
-    
+
     class Meta:
         model = Course
         fields = [
@@ -76,19 +77,19 @@ class CourseCreateUpdateSerializers(serializers.ModelSerializer):
         """
         if value is None:
             return []
-        
+
         if not isinstance(value, list):
             raise serializers.ValidationError(
                 "Technologies must be a list of technology IDs. Example: [1, 2, 3]"
             )
-        
+
         # Check if all items are valid Technology objects
         for tech in value:
             if not isinstance(tech, Technology):
                 raise serializers.ValidationError(
                     f"Invalid technology ID: {tech}. Must be a valid Technology primary key."
                 )
-        
+
         return value
 
     # ✅ Unique slug yaratish
@@ -293,7 +294,7 @@ class TechnologyDetailSerializer(serializers.ModelSerializer):
 
 class TechnologyCategorySerializer(serializers.Serializer):
     """
-    Serializer for returning technologies grouped by category 
+    Serializer for returning technologies grouped by category
     in the format requested by the user.
     """
     label = serializers.CharField()
@@ -353,7 +354,7 @@ class LessonListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lesson
-        fields = ['id', 'module', 'module_title', 'course_title', 'title', 'video_url', 
+        fields = ['id', 'module', 'module_title', 'course_title', 'title', 'video_url',
                  'duration', 'duration_formatted', 'order', 'is_preview']
 
     @extend_schema_field(serializers.CharField())
@@ -372,7 +373,7 @@ class LessonDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lesson
-        fields = ['id', 'module', 'module_title', 'course_title', 'title', 'video_url', 
+        fields = ['id', 'module', 'module_title', 'course_title', 'title', 'video_url',
                  'duration', 'duration_formatted', 'order', 'is_preview']
 
     @extend_schema_field(serializers.CharField())
@@ -393,11 +394,11 @@ class EnrollmentCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context['request'].user
         course = validated_data['course']
-        
+
         # Check if already enrolled
         if Enrollment.objects.filter(user=user, course=course).exists():
             raise serializers.ValidationError("You are already enrolled in this course.")
-        
+
         return Enrollment.objects.create(user=user, **validated_data)
 
 
@@ -419,12 +420,12 @@ class EnrollmentListSerializer(serializers.ModelSerializer):
         total_lessons = obj.course.total_lessons
         if total_lessons == 0:
             return 0.0
-        
+
         completed_lessons = obj.user.lesson_progresses.filter(
             is_completed=True,
             lesson__module__course=obj.course
         ).count()
-        
+
         return round((completed_lessons / total_lessons) * 100, 1)
 
 
@@ -442,12 +443,12 @@ class EnrollmentDetailSerializer(serializers.ModelSerializer):
         total_lessons = obj.course.total_lessons
         if total_lessons == 0:
             return 0.0
-        
+
         completed_lessons = obj.user.lesson_progresses.filter(
             is_completed=True,
             lesson__module__course=obj.course
         ).count()
-        
+
         return round((completed_lessons / total_lessons) * 100, 1)
 
     @extend_schema_field(serializers.IntegerField())
@@ -467,11 +468,11 @@ class LessonProgressCreateUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context['request'].user
         lesson = validated_data['lesson']
-        
+
         # Check if user is enrolled in the course
         if not Enrollment.objects.filter(user=user, course=lesson.module.course).exists():
             raise serializers.ValidationError("You must be enrolled in this course to track progress.")
-        
+
         return LessonProgress.objects.update_or_create(
             user=user,
             lesson=lesson,
@@ -486,7 +487,7 @@ class LessonProgressListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LessonProgress
-        fields = ['id', 'lesson', 'lesson_title', 'module_title', 'course_title', 
+        fields = ['id', 'lesson', 'lesson_title', 'module_title', 'course_title',
                  'is_completed', 'watched_at']
 
 
@@ -512,11 +513,11 @@ class ReviewCreateUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context['request'].user
         course = validated_data['course']
-        
+
         # Check if user is enrolled in the course
         if not Enrollment.objects.filter(user=user, course=course).exists():
             raise serializers.ValidationError("You must be enrolled in this course to leave a review.")
-        
+
         return Review.objects.update_or_create(
             user=user,
             course=course,
@@ -531,7 +532,7 @@ class ReviewListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ['id', 'course', 'course_title', 'user', 'user_name', 'user_avatar', 
+        fields = ['id', 'course', 'course_title', 'user', 'user_name', 'user_avatar',
                  'rating', 'comment', 'created_at']
 
     @extend_schema_field(serializers.URLField(allow_null=True))
@@ -547,7 +548,7 @@ class ReviewDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ['id', 'course', 'course_title', 'user', 'user_name', 'user_avatar', 
+        fields = ['id', 'course', 'course_title', 'user', 'user_name', 'user_avatar',
                  'rating', 'comment', 'created_at']
 
     @extend_schema_field(serializers.URLField(allow_null=True))

@@ -26,6 +26,9 @@ class Project(models.Model):
     def total_steps(self):
         return self.steps.count()
 
+    @total_steps.setter
+    def total_steps(self, value):
+        pass
     @property
     def total_duration_str(self):
         total = sum(s.duration for s in self.steps.all())

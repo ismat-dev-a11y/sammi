@@ -2,30 +2,30 @@ from rest_framework import serializers
 from .models import Project, ProjectStep, ProjectFeature
 from apps.courses.models import Technology
 from drf_spectacular.utils import extend_schema_field
-from drf_spectacular.types import OpenApiTypes
+# from drf_spectacular.types import OpenApiTypes
 
 
 class TechnologySerializers(serializers.ModelSerializer):
     category_display = serializers.CharField(source='get_category_display', read_only=True)
-    
+
     class Meta:
         model = Technology
         fields = ['id', 'category', 'category_display', 'label', 'value']
         read_only_fields = ['id']
-        
+
 class ProjectCreateUpdateSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(
-        write_only=True, 
+        write_only=True,
         required=False,
         help_text="Upload project image (JPEG, PNG, etc.)"
     )
     image_url = serializers.SerializerMethodField(read_only=True)
-    
+
     class Meta:
         model = Project
         fields = [
             'title', 'description', 'image', 'image_url',
-            'difficulty', 'github_url', 'demo_url', 
+            'difficulty', 'github_url', 'demo_url',
             'technologies',
         ]
         read_only_fields = ['id', 'slug', 'created_at']
@@ -35,8 +35,8 @@ class ProjectCreateUpdateSerializer(serializers.ModelSerializer):
         if obj.image:
             try:
                 return obj.image.url
-            except (ValueError, AttributeError):
-                return None
+            except Exception:
+                return f"http://84.247.165.177:9000/sammi-media/{obj.image.name}"
         return None
 
 
@@ -47,12 +47,12 @@ class ProjectUpdateSerializer(serializers.ModelSerializer):
         help_text="Upload new project image (JPEG, PNG, etc.) - leave empty to keep current image"
     )
     image_url = serializers.SerializerMethodField(read_only=True)
-    
+
     class Meta:
         model = Project
         fields = [
             'title', 'description', 'image', 'image_url',
-            'difficulty', 'github_url', 'demo_url', 
+            'difficulty', 'github_url', 'demo_url',
             'technologies'
         ]
         read_only_fields = ['id', 'slug', 'created_at']
@@ -77,19 +77,19 @@ class ProjectUpdateSerializer(serializers.ModelSerializer):
         """Handle image update properly - only update if new image is provided"""
         image = validated_data.pop('image', None)
         technologies = validated_data.pop('technologies', None)
-        
+
         # Update other fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        
+
         # Handle many-to-many technologies field separately
         if technologies is not None:
             instance.technologies.set(technologies)
-        
+
         # Only update image if a new one is provided (not None or empty)
         if image is not None and image != '':
             instance.image = image
-        
+
         instance.save()
         return instance
 
@@ -105,7 +105,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
     difficulty_display = serializers.CharField(source='get_difficulty_display', read_only=True)
     total_steps = serializers.IntegerField(read_only=True)
     total_duration_str = serializers.CharField(read_only=True)
-    
+
     class Meta:
         model = Project
         fields = [
@@ -146,7 +146,7 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
     total_duration_str = serializers.CharField(read_only=True)
     features = ProjectFeatureSerializer(many=True, read_only=True)
     steps = ProjectStepSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = Project
         fields = [
@@ -165,8 +165,8 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
             except (ValueError, AttributeError):
                 return None
         return None
-    
-# ProjectStep 
+
+# ProjectStep
 class ProjectStepActionSerializer(serializers.ModelSerializer):
     video = serializers.FileField(
         write_only=True,
@@ -192,12 +192,12 @@ class ProjectStepListSerializer(serializers.ModelSerializer):
 
 class ProjectStepDetailSerializer(serializers.ModelSerializer):
     video_url = serializers.SerializerMethodField(read_only=True)
-    
+
     class Meta:
         model = ProjectStep
         fields = ['id', 'title', 'video_url', 'duration', 'order']
         read_only_fields = ['id', 'video_url']
-    
+
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_video_url(self, obj):
         return obj.video_url if obj.video_url else None

@@ -1,5 +1,6 @@
 import ast
 import uuid
+from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
 from rest_framework import serializers

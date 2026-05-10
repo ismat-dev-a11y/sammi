@@ -18,7 +18,7 @@ class Category(models.Model):
 
     class Meta:
         verbose_name_plural = "Categories"
-    
+
 
 class Technology(models.Model):
     CATEGORY_CHOICES = [
@@ -29,7 +29,7 @@ class Technology(models.Model):
         ("mobile", "Mobile"),
         ("other", "Other"),
     ]
-    
+
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="other")
     label = models.CharField(max_length=100, blank=True, default='')
     value = models.JSONField(default=list)
@@ -95,7 +95,7 @@ class Course(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-    
+
 
 
 

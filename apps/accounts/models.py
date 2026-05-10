@@ -1,11 +1,7 @@
 # apps/accounts/models.py
 
-from cgitb import text
-from tabnanny import verbose
-from turtle import mode
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.forms import CharField, DateTimeField
 from django.utils.translation import gettext_lazy as _
 
 class UserManager(BaseUserManager):

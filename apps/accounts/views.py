@@ -1,5 +1,6 @@
 from django.core.serializers import serialize
 from django.forms import EmailField
+from rest_framework.generics import ListAPIView
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,7 +12,8 @@ from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 User = get_user_model()
-
+from core.permissions import IsAdmin
+from .models import ContactMessage
 from .serializers import GoogleAuthSerializer, UserSerializer, UserUpdateSerializer, SendEmailOTPSerializer, VerifyEmailOTPSerializer, ContactMessageSerializer
 from apps.accounts.guthub.serializers import GitHubAuthSerializer
 
@@ -89,10 +91,10 @@ class SendEmailOTPView(GenericAPIView):
 
 @extend_schema(summary='OTP tasdiqlash', tags=['Accounts'])
 class VerifyEmailOTPView(GenericAPIView):
-    serializer_class = VerifyEmailOTPSerializer  
+    serializer_class = VerifyEmailOTPSerializer
 
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)  
+        serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
             email = serializer.validated_data['email']
@@ -156,3 +158,9 @@ class ContactMessageAPiView(APIView):
             serializer.save()
             return Response({"message": "Xabar yuborildi!"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=400)
+
+@extend_schema(summary='Contacts', tags=['Accounts'], request=ContactMessageSerializer)
+class ContactMessageListView(ListAPIView):
+    queryset = ContactMessage.objects.all()
+    serializer_class = ContactMessageSerializer
+    permission_classes = [IsAdmin, IsAuthenticated]

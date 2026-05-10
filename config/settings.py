@@ -306,14 +306,12 @@ SECURE_BROWSER_XSS_FILTER      = True
 
 # ══════════════════════════════════════════
 #  CACHE
-# ══════════════════════════════════════════
 CACHES = {
     "default": {
-        "BACKEND":  "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "otp-cache",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
     }
 }
-
 # ══════════════════════════════════════════
 #  EMAIL
 # ══════════════════════════════════════════
@@ -324,3 +322,4 @@ EMAIL_USE_SSL       = True
 EMAIL_USE_TLS       = False
 EMAIL_HOST_USER     = 'ismatbekismoilov2@gmail.com'
 EMAIL_HOST_PASSWORD = 'hdiv hxlg etol ubgf'
+EMAIL_TIMEOUT = 10

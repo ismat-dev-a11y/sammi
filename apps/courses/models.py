@@ -32,7 +32,7 @@ class Technology(models.Model):
     
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="other")
     label = models.CharField(max_length=100, blank=True, default='')
-    value = models.CharField(max_length=50, unique=True)
+    value = models.JSONField(default=list)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

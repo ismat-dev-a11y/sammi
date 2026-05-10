@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 User = get_user_model()
 
-from .serializers import GoogleAuthSerializer, UserSerializer, UserUpdateSerializer, SendEmailOTPSerializer, VerifyEmailOTPSerializer
+from .serializers import GoogleAuthSerializer, UserSerializer, UserUpdateSerializer, SendEmailOTPSerializer, VerifyEmailOTPSerializer, ContactMessageSerializer
 from apps.accounts.guthub.serializers import GitHubAuthSerializer
 
 def _jwt_tokens(user):
@@ -22,7 +22,7 @@ def _jwt_tokens(user):
         "access":  str(refresh.access_token),
     }
 
-extend_schema(summary='Google auth')
+@extend_schema(summary='Google Auth', tags=['Accounts'])
 @method_decorator(csrf_exempt, name='dispatch')
 class GoogleAuthView(GenericAPIView):
     permission_classes     = [AllowAny]
@@ -89,10 +89,10 @@ class SendEmailOTPView(GenericAPIView):
 
 @extend_schema(summary='OTP tasdiqlash', tags=['Accounts'])
 class VerifyEmailOTPView(GenericAPIView):
-    serializer_class = VerifyEmailOTPSerializer  # ✅ shu ham
+    serializer_class = VerifyEmailOTPSerializer  
 
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)  # ✅ self.get_serializer
+        serializer = self.get_serializer(data=request.data)  
 
         if serializer.is_valid():
             email = serializer.validated_data['email']
@@ -107,6 +107,9 @@ class VerifyEmailOTPView(GenericAPIView):
             return Response(
                 {
                     "message": "OTP tasdiqlandi",
+                    "email": user.email,
+                    "full_name": user.get_full_name(),
+                    "avatar_url": user.avatar_url,
                     "refresh": tokens['refresh'],
                     "access": tokens['access'],
                 },
@@ -115,7 +118,7 @@ class VerifyEmailOTPView(GenericAPIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 @method_decorator(csrf_exempt, name='dispatch')
-@extend_schema(summary="GitHub auth")
+@extend_schema(summary='GitHub Auth', tags=['Accounts'])
 class GitHubAuthView(GenericAPIView):
     permission_classes     = [AllowAny]
     authentication_classes = []
@@ -145,3 +148,11 @@ class GitHubAuthView(GenericAPIView):
             },
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
+@extend_schema(summary='Contacts', tags=['Accounts'], request=ContactMessageSerializer)
+class ContactMessageAPiView(APIView):
+    def post(self, request):
+        serializer = ContactMessageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Xabar yuborildi!"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=400)

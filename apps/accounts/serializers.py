@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from django.conf import settings
-from .models import User
+from .models import User, ContactMessage
 from .utils import send_otp_email, verify_otp
 
 
@@ -101,3 +101,11 @@ class VerifyEmailOTPSerializer(serializers.Serializer):
             raise serializers.ValidationError("OTP noto'g'ri yoki eskirgan")
 
         return data
+    
+# Contact Us Message
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
+        fields = ['id', 'name', 'email', 'message', 'created_at']
+        read_only_fields = ['created_at']

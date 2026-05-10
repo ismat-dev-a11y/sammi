@@ -1,4 +1,5 @@
 import random
+import time
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.conf import settings
@@ -12,20 +13,27 @@ def get_otp_key(email):
     return f"otp_{email.lower().strip()}"
 
 
-def send_otp_email(email):
+
+def send_otp_email(email, retries=3, delay=1):
     otp = generate_otp()
     key = get_otp_key(email)
+    cache.set(key, otp, timeout=300)
 
-    cache.set(key, otp, timeout=300)  # 5 minut
-
-    send_mail(
-        subject="Your OTP Code",
-        message=f"Your verification code is: {otp}",
-        from_email=settings.EMAIL_HOST_USER,
-        recipient_list=[email],
-        fail_silently=False,  # <--- SHU QATORNI QO'SHING
-    )
-    return otp
+    for attempt in range(retries):
+        try:
+            send_mail(
+                subject="Your OTP Code",
+                message=f"Your verification code is: {otp}",
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            return otp  
+        except Exception as e:
+            if attempt < retries - 1:
+                time.sleep(delay)
+                continue
+            raise e 
 
 
 def verify_otp(email, otp):

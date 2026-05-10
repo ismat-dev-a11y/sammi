@@ -1,7 +1,11 @@
 # apps/accounts/models.py
 
+from cgitb import text
+from tabnanny import verbose
+from turtle import mode
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.forms import CharField, DateTimeField
 from django.utils.translation import gettext_lazy as _
 
 class UserManager(BaseUserManager):
@@ -125,3 +129,20 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.full_name or self.email
+
+# Contact Us
+
+class ContactMessage(models.Model):
+    name = models.CharField(max_length=100, verbose_name='Ism')
+    email = models.EmailField(verbose_name='email')
+    message = models.TextField(verbose_name='Text')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Xabar'
+        verbose_name_plural = 'Xabarlar'
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"{self.name} - {self.email}"
+        

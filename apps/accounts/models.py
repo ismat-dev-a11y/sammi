@@ -80,6 +80,8 @@ class User(AbstractUser):
 
     # ── Asosiy fieldlar ────────────────────────────────────────
     full_name = models.CharField(_("full name"),max_length=250,blank=True,)
+    nickname   = models.CharField(_("nickname"),  max_length=50,  blank=True)  
+    bio        = models.TextField(_("bio"),blank=True)
     email = models.EmailField(_("email"),max_length=254,unique=True,db_index=True,error_messages={"unique": _("Bu email allaqachon ro'yxatdan o'tgan."),},)
 
     # ── Google OAuth ───────────────────────────────────────────

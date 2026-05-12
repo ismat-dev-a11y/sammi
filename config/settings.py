@@ -289,6 +289,8 @@ SPECTACULAR_SETTINGS = {
             "Bearer": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
         }
     },
+    "EXTENSIONS": [],
+    "DISABLE_ERRORS_AND_WARNINGS": True,  # Suppress schema generation warnings
 }
 
 # ══════════════════════════════════════════

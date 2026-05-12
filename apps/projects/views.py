@@ -10,7 +10,7 @@ from drf_spectacular.openapi import OpenApiParameter
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.pagination import PageNumberPagination
 from .models import Project, ProjectStep
-from .serializers import ProjectUpdateSerializer, ProjectListSerializer, ProjectDetailSerializer, ProjectUpdateSerializer, ProjectStepActionSerializer, ProjectStepListSerializer, ProjectStepDetailSerializer
+from .serializers import ProjectUpdateSerializer, ProjectListSerializer, ProjectDetailSerializer, ProjectUpdateSerializer, ProjectStepActionSerializer, ProjectStepListSerializer, ProjectStepDetailSerializer, ProjectStepSerializer
 
 class ProjectCreateView(generics.CreateAPIView):
     serializer_class = ProjectUpdateSerializer
@@ -277,3 +277,87 @@ class ProjectStepDeleteView(generics.DestroyAPIView):
     @extend_schema(responses={204: None})
     def delete(self, request, *args, **kwargs):
         return super().delete(request, *args, **kwargs)
+
+
+class ProjectAdminListView(generics.ListAPIView):
+    """Admin list view for all projects - accessible to authenticated users"""
+    serializer_class = ProjectListSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['difficulty', 'technologies', 'is_published']
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at', 'title']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        return Project.objects.all().prefetch_related('technologies').annotate(
+            total_steps=Count('steps'),
+            total_duration=Coalesce(Sum('steps__duration'), 0)
+        ).order_by('-created_at')
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='difficulty',
+                type=OpenApiTypes.STR,
+                enum=['beginner', 'intermediate', 'advanced'],
+                description='Filter by difficulty level'
+            ),
+            OpenApiParameter(
+                name='technologies',
+                type=OpenApiTypes.INT,
+                description='Filter by technology ID (can be used multiple times)'
+            ),
+            OpenApiParameter(
+                name='is_published',
+                type=OpenApiTypes.BOOL,
+                description='Filter by published status'
+            ),
+            OpenApiParameter(
+                name='search',
+                type=OpenApiTypes.STR,
+                description='Search in title and description'
+            ),
+            OpenApiParameter(
+                name='ordering',
+                type=OpenApiTypes.STR,
+                enum=['created_at', '-created_at', 'title', '-title'],
+                description='Ordering field'
+            ),
+        ],
+        responses={200: ProjectListSerializer(many=True)}
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+class ProjectStepAdminListView(generics.ListAPIView):
+    """Admin list view for all project steps - accessible to authenticated users"""
+    serializer_class = ProjectStepSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['project']
+    ordering_fields = ['order', 'project', 'created_at']
+    ordering = ['project', 'order']
+
+    def get_queryset(self):
+        return ProjectStep.objects.all().select_related('project').order_by('project', 'order')
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='project',
+                type=OpenApiTypes.INT,
+                description='Filter by project ID'
+            ),
+            OpenApiParameter(
+                name='ordering',
+                type=OpenApiTypes.STR,
+                enum=['order', '-order', 'project', '-project'],
+                description='Ordering field'
+            ),
+        ],
+        responses={200: ProjectStepSerializer(many=True)}
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)

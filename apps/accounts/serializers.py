@@ -108,7 +108,7 @@ class ContactMessageSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'email', 'message', 'created_at']
         read_only_fields = ['created_at']
 
-class UserActivitySerializer(serializers.ModelSerializer):
+class UserActivityResponseSerializer(serializers.ModelSerializer):
     level = serializers.SerializerMethodField()
 
     class Meta:

@@ -36,7 +36,7 @@ def upload_to_minio(file, folder: str, content_type: str = "application/octet-st
         content_type = content_type,
     )
 
-    return f"{settings.AWS_S3_ENDPOINT_URL}/{bucket}/{object_name}"
+    return object_name  # "lessons/videos/uuid.mp4"
 
 
 def upload_video_to_minio(file) -> str:

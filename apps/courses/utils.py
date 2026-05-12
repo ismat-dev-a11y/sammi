@@ -1,5 +1,7 @@
 from apps.courses.models import Technology
-
+import subprocess
+import tempfile
+import os
 
 def get_technologies_by_category():
     """
@@ -45,9 +47,7 @@ def get_technologies_by_category():
 
     return result
 
-import subprocess
-import tempfile
-import os
+
 
 def get_video_duration(video_file) -> int:
     """

@@ -1,12 +1,8 @@
-import ast
-import uuid
 from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
 from rest_framework import serializers
-from django.db.models import Sum
 from drf_spectacular.utils import extend_schema_field
-from drf_spectacular.types import OpenApiTypes
 from .models import Category, Technology, Course, Module, Lesson, Enrollment, Review, LessonProgress
 from .utils import get_video_duration
 from utils.minio_client import upload_video_to_minio
@@ -419,12 +415,14 @@ class LessonListSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_video_url(self, obj):
-        if obj.video:
-            endpoint = settings.AWS_S3_ENDPOINT_URL.rstrip('/')
-            bucket   = settings.AWS_STORAGE_BUCKET_NAME
-            name     = str(obj.video).lstrip('/')
-            return f"{endpoint}/{bucket}/{name}"
-        return None
+        if not obj.video:
+            return None
+        name = str(obj.video).lstrip('/')
+        if name.startswith('http'):
+            return name
+        endpoint = settings.AWS_S3_ENDPOINT_URL.rstrip('/')
+        bucket   = settings.AWS_STORAGE_BUCKET_NAME
+        return f"{endpoint}/{bucket}/{name}"
 
     @extend_schema_field(serializers.CharField())
     def get_duration_formatted(self, obj):

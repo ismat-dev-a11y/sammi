@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import GoogleAuthView, SendEmailOTPView, VerifyEmailOTPView, GitHubAuthView, ContactMessageAPiView, ContactMessageListView
+from .views import GoogleAuthView, SendEmailOTPView, VerifyEmailOTPView, GitHubAuthView, ContactMessageAPiView, ContactMessageListView, UserActivityView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -15,5 +15,6 @@ urlpatterns = [
     path('send-otp/', SendEmailOTPView.as_view(), name='send-otp'),
     path('verify-otp/', VerifyEmailOTPView.as_view(), name='verify-otp'),
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('activity/', UserActivityView.as_view(), name='user-activity'),
     # path("auth/me/",     MeView.as_view(),         name="me"),
 ]

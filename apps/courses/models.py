@@ -78,7 +78,7 @@ class Course(models.Model):
 
     @property
     def total_duration_hours(self):
-        total = sum(l.duration for m in self.modules.all() for l in m.lessons.all())
+        total = sum(lesson.duration for m in self.modules.all() for lesson in m.lessons.all())
         return round(total / 60, 1)
 
     @property

@@ -1,10 +1,8 @@
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Sum
 from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
-from drf_spectacular.types import OpenApiTypes
 from .models import Course, Category, Technology, Module, Lesson, Enrollment, LessonProgress, Review
 from .utils import get_technologies_by_category
 from .serializers import (
@@ -199,82 +197,104 @@ class TechnologyGroupedView(generics.GenericAPIView):
         return Response(technologies)
 
 
+## ============================================================
 # Module Views
+# ============================================================
+
 class ModuleCreateView(generics.CreateAPIView):
-    queryset = Module.objects.all()
-    serializer_class = ModuleCreateUpdateSerializer
-    permission_classes = [IsAdmin, IsAuthenticated]
+    queryset           = Module.objects.select_related('course').prefetch_related('lessons')
+    serializer_class   = ModuleCreateUpdateSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
 
 
 class ModuleListView(generics.ListAPIView):
-    queryset = Module.objects.all()
-    serializer_class = ModuleListSerializer
+    queryset           = Module.objects.select_related('course').prefetch_related('lessons')
+    serializer_class   = ModuleListSerializer
     permission_classes = []
 
 
 class ModuleUpdateView(generics.UpdateAPIView):
-    queryset = Module.objects.all()
-    serializer_class = ModuleCreateUpdateSerializer
-    permission_classes = [IsAdmin, IsAuthenticated]
+    queryset           = Module.objects.select_related('course').prefetch_related('lessons')
+    serializer_class   = ModuleCreateUpdateSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
 
 
 class ModuleDetailView(generics.RetrieveAPIView):
-    queryset = Module.objects.all()
-    serializer_class = ModuleDetailSerializer
+    queryset           = Module.objects.select_related('course').prefetch_related('lessons')
+    serializer_class   = ModuleDetailSerializer
     permission_classes = []
 
 
 class ModuleDeleteView(generics.DestroyAPIView):
-    queryset = Module.objects.all()
+    queryset           = Module.objects.select_related('course')
+    serializer_class   = ModuleCreateUpdateSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
-    serializer_class = ModuleCreateUpdateSerializer
 
 
+# ============================================================
 # Lesson Views
+# ============================================================
+
 @extend_schema(
     request={
         'multipart/form-data': {
             'type': 'object',
             'properties': {
-                'module':      {'type': 'integer'},
-                'title':       {'type': 'string'},
-                'video':       {'type': 'string', 'format': 'binary'},  # ← shu kerak
-                'duration':    {'type': 'integer'},
-                'order':       {'type': 'integer'},
-                'is_preview':  {'type': 'boolean'},
+                'module':     {'type': 'integer'},
+                'title':      {'type': 'string'},
+                'video':      {'type': 'string', 'format': 'binary'},
+                'duration':   {'type': 'integer'},
+                'order':      {'type': 'integer'},
+                'is_preview': {'type': 'boolean'},
             }
         }
     }
 )
 class LessonCreateView(generics.CreateAPIView):
-    queryset           = Lesson.objects.all()
+    queryset           = Lesson.objects.select_related('module__course')
     serializer_class   = LessonCreateUpdateSerializer
-    permission_classes = [IsAdmin, IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdmin]
     parser_classes     = [MultiPartParser, FormParser]
 
+
 class LessonListView(generics.ListAPIView):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonListSerializer
+    queryset           = Lesson.objects.select_related('module__course')
+    serializer_class   = LessonListSerializer
     permission_classes = []
 
 
+@extend_schema(
+    request={
+        'multipart/form-data': {
+            'type': 'object',
+            'properties': {
+                'module':     {'type': 'integer'},
+                'title':      {'type': 'string'},
+                'video':      {'type': 'string', 'format': 'binary'},
+                'duration':   {'type': 'integer'},
+                'order':      {'type': 'integer'},
+                'is_preview': {'type': 'boolean'},
+            }
+        }
+    }
+)
 class LessonUpdateView(generics.UpdateAPIView):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonCreateUpdateSerializer
-    permission_classes = [IsAdmin, IsAuthenticated]
+    queryset           = Lesson.objects.select_related('module__course')
+    serializer_class   = LessonCreateUpdateSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    parser_classes     = [MultiPartParser, FormParser]  # ← qo'shildi
 
 
 class LessonDetailView(generics.RetrieveAPIView):
-    queryset = Lesson.objects.all()
-    serializer_class = LessonDetailSerializer
+    queryset           = Lesson.objects.select_related('module__course')
+    serializer_class   = LessonDetailSerializer
     permission_classes = []
 
 
 class LessonDeleteView(generics.DestroyAPIView):
-    queryset = Lesson.objects.all()
+    queryset           = Lesson.objects.select_related('module__course')
+    serializer_class   = LessonCreateUpdateSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
-    serializer_class = LessonCreateUpdateSerializer
-
 
 # Enrollment Views
 class EnrollmentCreateView(generics.CreateAPIView):

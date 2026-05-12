@@ -1,10 +1,8 @@
 from rest_framework import serializers
-from django.contrib.auth import authenticate
-from django.core.exceptions import ValidationError
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from django.conf import settings
-from .models import User, ContactMessage
+from .models import User, ContactMessage, UserActivity
 from .utils import send_otp_email, verify_otp
 
 
@@ -109,3 +107,21 @@ class ContactMessageSerializer(serializers.ModelSerializer):
         model = ContactMessage
         fields = ['id', 'name', 'email', 'message', 'created_at']
         read_only_fields = ['created_at']
+
+class UserActivitySerializer(serializers.ModelSerializer):
+    level = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserActivity
+        fields = ['date', 'count', 'level']
+
+    def get_level(self, obj):
+        if obj.count == 0:
+            return 0
+        if obj.count <= 3:
+            return 1
+        if obj.count <= 6:
+            return 2
+        if obj.count <= 9:
+            return 3
+        return 4

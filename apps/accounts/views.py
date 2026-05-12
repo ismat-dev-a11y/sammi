@@ -1,5 +1,3 @@
-from django.core.serializers import serialize
-from django.forms import EmailField
 from rest_framework.generics import ListAPIView
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
@@ -11,11 +9,18 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-User = get_user_model()
+from datetime import date, timedelta
 from core.permissions import IsAdmin
-from .models import ContactMessage
-from .serializers import GoogleAuthSerializer, UserSerializer, UserUpdateSerializer, SendEmailOTPSerializer, VerifyEmailOTPSerializer, ContactMessageSerializer
+from .models import ContactMessage, UserActivity
+from .serializers import (
+    GoogleAuthSerializer, UserSerializer, UserUpdateSerializer,
+    SendEmailOTPSerializer, VerifyEmailOTPSerializer,
+    ContactMessageSerializer
+)
 from apps.accounts.guthub.serializers import GitHubAuthSerializer
+
+User = get_user_model()  
+
 
 def _jwt_tokens(user):
     refresh = RefreshToken.for_user(user)
@@ -164,3 +169,43 @@ class ContactMessageListView(ListAPIView):
     queryset = ContactMessage.objects.all()
     serializer_class = ContactMessageSerializer
     permission_classes = [IsAdmin, IsAuthenticated]
+
+
+class UserActivityView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        end_date = date.today()
+        start_date = end_date.replace(year=end_date.year - 1)  # Exactly 1 year ago
+
+        # DB dagi mavjud activity lar
+        activities = UserActivity.objects.filter(
+            user=request.user,
+            date__range=(start_date, end_date)
+        )
+        activity_map = {a.date: a for a in activities}
+
+        # Barcha kunlarni to'ldirish (bo'sh kunlar = 0)
+        result = []
+        current = start_date
+        while current <= end_date:
+            count = activity_map[current].count if current in activity_map else 0
+
+            level = 0
+            if count > 0:
+                level = 1
+            if count > 3:
+                level = 2
+            if count > 6:
+                level = 3
+            if count > 9:
+                level = 4
+
+            result.append({
+                "date": current.isoformat(),
+                "count": count,
+                "level": level
+            })
+            current += timedelta(days=1)
+
+        return Response(result)

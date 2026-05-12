@@ -10,7 +10,6 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.pagination import PageNumberPagination
 from .models import Project, ProjectStep
 from .serializers import ProjectCreateUpdateSerializer, ProjectListSerializer, ProjectDetailSerializer, ProjectUpdateSerializer, ProjectStepActionSerializer, ProjectStepListSerializer, ProjectStepDetailSerializer
-from core.permissions import IsAdmin
 
 class ProjectCreateView(generics.CreateAPIView):
     serializer_class = ProjectCreateUpdateSerializer

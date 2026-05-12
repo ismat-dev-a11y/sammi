@@ -143,4 +143,16 @@ class ContactMessage(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.email}"
-        
+
+class UserActivity(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activities')
+    date = models.DateField(auto_now_add=True)  # Faqat kunni saqlaydi
+    count = models.PositiveIntegerField(default=0)  # Shu kundagi harakatlar soni
+
+    class Meta:
+        unique_together = ('user', 'date')  # Bir kunda bir foydalanuvchi uchun bitta qator
+        verbose_name = "Foydalanuvchi faolligi"
+        verbose_name_plural = "Foydalanuvchilar faolligi"
+
+    def __str__(self):
+        return f"{self.user.email} - {self.date}: {self.count}"

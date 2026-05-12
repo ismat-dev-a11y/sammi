@@ -6,8 +6,6 @@ from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 from PIL import Image
 import io
-import tempfile
-import os
 
 from .models import Project, ProjectStep, ProjectFeature
 from apps.courses.models import Technology

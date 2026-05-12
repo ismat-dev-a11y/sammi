@@ -2,10 +2,8 @@ from django.urls import path
 from .views import (
     CourseCreateView, CourseListView, CourseUpdateView, CourseDetailView, CourseDeleteView,
     CategoryCreateView, CategoryListView, CategoryUpdateView, CategoryDetailView, CategoryDeleteView,
-    TechnologyCreateView, TechnologyListView, TechnologyUpdateView, TechnologyDetailView, TechnologyDeleteView, TechnologyGroupedView,
-    ModuleCreateView, ModuleListView, ModuleUpdateView, ModuleDetailView, ModuleDeleteView,
+    TechnologyCreateView, TechnologyListView, TechnologyUpdateView, TechnologyDetailView, TechnologyDeleteView, ModuleCreateView, ModuleListView, ModuleUpdateView, ModuleDetailView, ModuleDeleteView,
     LessonCreateView, LessonListView, LessonUpdateView, LessonDetailView, LessonDeleteView,
-    EnrollmentCreateView, EnrollmentListView, EnrollmentDetailView, EnrollmentDeleteView,
     LessonProgressCreateView, LessonProgressListView, LessonProgressDetailView, LessonProgressUpdateView,
     ReviewCreateView, ReviewListView, ReviewUpdateView, ReviewDetailView, ReviewDeleteView
 )
@@ -31,7 +29,7 @@ urlpatterns = [
     path('technology/<int:pk>/', TechnologyUpdateView.as_view()),
     path('technology/detail/<int:pk>/', TechnologyDetailView.as_view()),
     path('technology/delete/<int:pk>/', TechnologyDeleteView.as_view()),
-    path('technology/grouped', TechnologyGroupedView.as_view()),
+    # path('technology/grouped', TechnologyGroupedView.as_view()),
     
     # Module URLs
     path('modules/', ModuleCreateView.as_view()),
@@ -48,10 +46,10 @@ urlpatterns = [
     path('lessons/delete/<int:pk>/', LessonDeleteView.as_view()),
     
     # Enrollment URLs
-    path('enrollment/', EnrollmentCreateView.as_view()),
-    path('enrollment/list', EnrollmentListView.as_view()),
-    path('enrollment/<int:pk>/', EnrollmentDetailView.as_view()),
-    path('enrollment/delete/<int:pk>/', EnrollmentDeleteView.as_view()),
+    # path('enrollment/', EnrollmentCreateView.as_view()),
+    # path('enrollment/list', EnrollmentListView.as_view()),
+    # path('enrollment/<int:pk>/', EnrollmentDetailView.as_view()),
+    # path('enrollment/delete/<int:pk>/', EnrollmentDeleteView.as_view()),
     
     # LessonProgress URLs
     path('lesson-progress/', LessonProgressCreateView.as_view()),

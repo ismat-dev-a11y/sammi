@@ -3,6 +3,11 @@ from .models import Project, ProjectStep, ProjectFeature
 from apps.courses.models import Technology
 from drf_spectacular.utils import extend_schema_field
 # from drf_spectacular.types import OpenApiTypes
+from utils.minio_client import upload_to_minio
+from moviepy.video.io.VideoFileClip import VideoFileClip
+import tempfile
+import os
+from utils.minio_client import upload_project_video_to_minio, get_minio_url
 
 
 class TechnologySerializers(serializers.ModelSerializer):
@@ -13,31 +18,61 @@ class TechnologySerializers(serializers.ModelSerializer):
         fields = ['id', 'category', 'category_display', 'label', 'value']
         read_only_fields = ['id']
 
-class ProjectCreateUpdateSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(
+# serializers.py
+
+class ProjectStepSerializer(serializers.ModelSerializer):
+    video_url = serializers.SerializerMethodField(read_only=True)
+    video = serializers.FileField(
         write_only=True,
         required=False,
-        help_text="Upload project image (JPEG, PNG, etc.)"
+        help_text="Upload step video (MP4, etc.)"
     )
-    image_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
-        model = Project
+        model = ProjectStep
         fields = [
-            'title', 'description', 'image', 'image_url',
-            'difficulty', 'github_url', 'demo_url',
-            'technologies',
+            'id', 'project', 'title', 'video', 'video_url',
+            'duration', 'order',
         ]
-        read_only_fields = ['id', 'slug', 'created_at']
+        read_only_fields = ['id', 'video_url']
 
     @extend_schema_field(serializers.URLField(allow_null=True))
-    def get_image_url(self, obj):
-        if obj.image:
-            try:
-                return obj.image.url
-            except Exception:
-                return f"http://84.247.165.177:9000/sammi-media/{obj.image.name}"
+    def get_video_url(self, obj):
+        if obj.video_key:
+            if obj.video_url:
+                return obj.video_url
+            return f"http://84.247.165.177:9000/sammi-media/{obj.video_key}"
         return None
+
+    def create(self, validated_data):
+        video_file = validated_data.pop('video', None)
+        step = ProjectStep(**validated_data)
+
+        if video_file:
+            project = validated_data['project']
+            order   = validated_data.get('order', 0)
+
+            step.duration  = self._get_video_duration(video_file)
+            step.video_key = upload_project_video_to_minio(video_file, project.slug, order)
+            step.video_url = get_minio_url(step.video_key)
+
+        step.save()
+        return step
+
+    def update(self, instance, validated_data):
+        video_file = validated_data.pop('video', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if video_file:
+            project = instance.project
+            video_key = f"projects/videos/{project.slug}/step-{instance.order}.mp4"
+            instance.video_key = upload_to_minio(video_file, video_key)
+            instance.video_url = f"http://84.247.165.177:9000/sammi-media/{instance.video_key}"
+
+        instance.save()
+        return instance
 
 
 class ProjectUpdateSerializer(serializers.ModelSerializer):
@@ -168,36 +203,91 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
 
 # ProjectStep
 class ProjectStepActionSerializer(serializers.ModelSerializer):
-    video = serializers.FileField(
-        write_only=True,
-        required=False,
-        help_text="Upload step video (MP4, AVI, etc.)"
-    )
+    video = serializers.FileField(write_only=True, required=False)
+    video_url = serializers.SerializerMethodField(read_only=True)
+    project = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = ProjectStep
+        fields = ['id', 'project', 'title', 'video', 'video_url', 'duration', 'order']
+        read_only_fields = ['id', 'duration', 'video_url', 'project']
+
+    def get_video_url(self, obj):
+        if obj.video_key:
+            return obj.video_url or get_minio_url(obj.video_key)
+        return None
+
+    def _get_video_duration(self, video_file) -> int:
+        try:
+            with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as tmp:
+                for chunk in video_file.chunks():
+                    tmp.write(chunk)
+                tmp_path = tmp.name
+
+            clip = VideoFileClip(tmp_path)
+            duration_minutes = int(clip.duration / 60)
+            clip.close()
+            os.unlink(tmp_path)
+            return max(duration_minutes, 1)
+        except Exception:
+            return 0
+
+    def create(self, validated_data):
+        video_file = validated_data.pop('video', None)
+        step = ProjectStep(**validated_data)
+
+        if video_file:
+            project = validated_data['project']
+            order   = validated_data.get('order', 0)
+
+            step.duration  = self._get_video_duration(video_file)
+            step.video_key = upload_project_video_to_minio(video_file, project.slug, order)  # ✅
+            step.video_url = get_minio_url(step.video_key)  # ✅
+
+        step.save()
+        return step
+
+    def update(self, instance, validated_data):
+        video_file = validated_data.pop('video', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if video_file:
+            instance.duration  = self._get_video_duration(video_file)
+            instance.video_key = upload_project_video_to_minio(  # ✅
+                video_file, instance.project.slug, instance.order
+            )
+            instance.video_url = get_minio_url(instance.video_key)  # ✅
+
+        instance.save()
+        return instance
+
+class ProjectStepListSerializer(serializers.ModelSerializer):
     video_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ProjectStep
-        fields = ['id', 'title', 'video', 'video_url', 'duration', 'order']
+        fields = ['id', 'project', 'title', 'video_url', 'duration', 'order']
         read_only_fields = ['id', 'video_url']
 
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_video_url(self, obj):
-        return obj.video_url if obj.video_url else None
+        if obj.video_key:
+            return obj.video_url or f"http://84.247.165.177:9000/sammi-media/{obj.video_key}"
+        return None
 
-class ProjectStepListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProjectStep
-        fields = ['id', 'project', 'title', 'video_url', 'duration', 'order']
-        read_only_fields = ['id', 'video_url']
 
 class ProjectStepDetailSerializer(serializers.ModelSerializer):
     video_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ProjectStep
-        fields = ['id', 'title', 'video_url', 'duration', 'order']
+        fields = ['id', 'project', 'title', 'video_url', 'duration', 'order']
         read_only_fields = ['id', 'video_url']
 
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_video_url(self, obj):
-        return obj.video_url if obj.video_url else None
+        if obj.video_key:
+            return obj.video_url or f"http://84.247.165.177:9000/sammi-media/{obj.video_key}"
+        return None

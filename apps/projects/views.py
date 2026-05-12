@@ -1,3 +1,4 @@
+from django.shortcuts import render, get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce
@@ -9,10 +10,10 @@ from drf_spectacular.openapi import OpenApiParameter
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.pagination import PageNumberPagination
 from .models import Project, ProjectStep
-from .serializers import ProjectCreateUpdateSerializer, ProjectListSerializer, ProjectDetailSerializer, ProjectUpdateSerializer, ProjectStepActionSerializer, ProjectStepListSerializer, ProjectStepDetailSerializer
+from .serializers import ProjectUpdateSerializer, ProjectListSerializer, ProjectDetailSerializer, ProjectUpdateSerializer, ProjectStepActionSerializer, ProjectStepListSerializer, ProjectStepDetailSerializer
 
 class ProjectCreateView(generics.CreateAPIView):
-    serializer_class = ProjectCreateUpdateSerializer
+    serializer_class = ProjectUpdateSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
@@ -33,7 +34,7 @@ class ProjectCreateView(generics.CreateAPIView):
                 'required': ['title', 'description']
             }
         },
-        responses={201: ProjectCreateUpdateSerializer}
+        responses={201: ProjectUpdateSerializer}
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
@@ -171,8 +172,14 @@ class ProjectDeleteView(generics.DestroyAPIView):
         return super().delete(request, *args, **kwargs)
 
 # projectStep
+# projectStep views
+
 class ProjectStepView(generics.CreateAPIView):
     serializer_class = ProjectStepActionSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    
 
     @extend_schema(
         request={
@@ -184,26 +191,89 @@ class ProjectStepView(generics.CreateAPIView):
                     'order':    {'type': 'integer'},
                     'video': {
                         'type': 'string',
-                        'format': 'binary',          # ← shu "Choose File" ni chiqaradi
+                        'format': 'binary',
                         'description': 'Upload step video (MP4, AVI, etc.)'
                     },
-                }
+                },
+                'required': ['title', 'order']
             }
-        }
+        },
+        responses={201: ProjectStepActionSerializer}
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        from django.shortcuts import get_object_or_404
+        project = get_object_or_404(Project, pk=self.kwargs.get('project_pk'))
+        serializer.save(project=project)  
+
+
 
 class ProjectStepListView(generics.ListAPIView):
     serializer_class = ProjectStepListSerializer
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return ProjectStep.objects.all()
+        return ProjectStep.objects.filter(
+            project_id=self.kwargs.get('project_pk')
+        ).order_by('order')
+
 
 class ProjectStepDetailView(generics.RetrieveAPIView):
     serializer_class = ProjectStepDetailSerializer
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return ProjectStep.objects.all()
+        return ProjectStep.objects.filter(
+            project_id=self.kwargs.get('project_pk')
+        )
+
+
+class ProjectStepUpdateView(generics.UpdateAPIView):
+    serializer_class = ProjectStepActionSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_queryset(self):
+        return ProjectStep.objects.filter(
+            project_id=self.kwargs.get('project_pk')
+        )
+
+    @extend_schema(
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'title':    {'type': 'string'},
+                    'duration': {'type': 'integer'},
+                    'order':    {'type': 'integer'},
+                    'video': {
+                        'type': 'string',
+                        'format': 'binary',
+                        'description': 'Upload new video - leave empty to keep current'
+                    },
+                }
+            }
+        },
+        responses={200: ProjectStepActionSerializer}
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
+
+class ProjectStepDeleteView(generics.DestroyAPIView):
+    serializer_class = ProjectStepDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ProjectStep.objects.filter(
+            project_id=self.kwargs.get('project_pk')
+        )
+
+    @extend_schema(responses={204: None})
+    def delete(self, request, *args, **kwargs):
+        return super().delete(request, *args, **kwargs)

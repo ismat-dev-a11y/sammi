@@ -1,16 +1,24 @@
 from django.urls import path
-from . import views
+from .views import *
 
 urlpatterns = [
-    # Admin endpoints
-    path('projects/admin/create', views.ProjectCreateView.as_view(), name='project-create'),
-    path('projects/admin/<int:pk>/update', views.ProjectUpdateView.as_view(), name='project-update'),
-    path('projects/admin/<int:pk>/delete', views.ProjectDeleteView.as_view(), name='project-delete'),
-    path('projects/steps/create', views.ProjectCreateView.as_view(), name='project-step-create'),
-    
-    # Public endpoints
-    path('projects', views.ProjectListView.as_view(), name='project-list'),
-    path('projects/<int:pk>', views.ProjectDetailView.as_view(), name='project-detail'),
-    path('projects/steps', views.ProjectStepListView.as_view(), name='project-step-list'),
-    path('projects/steps/<int:pk>', views.ProjectStepDetailView.as_view(), name='project-step-detail'),
+    path('projects/admin/create', ProjectCreateView.as_view(), name='project-create'),
+    path('projects/admin/<int:pk>/update', ProjectUpdateView.as_view(), name='project-update'),
+    path('projects/admin/<int:pk>/delete', ProjectDeleteView.as_view(), name='project-delete'),
+    # ← bu qator o'chirildi
+
+    path('projects/<int:project_pk>/steps/',
+         ProjectStepListView.as_view(), name='project-step-list'),
+
+    path('projects/<int:project_pk>/steps/create/',
+         ProjectStepView.as_view(), name='project-step-create'),
+
+    path('projects/<int:project_pk>/steps/<int:pk>/',
+         ProjectStepDetailView.as_view(), name='project-step-detail'),
+
+    path('projects/<int:project_pk>/steps/<int:pk>/update/',
+         ProjectStepUpdateView.as_view(), name='project-step-update'),
+
+    path('projects/<int:project_pk>/steps/<int:pk>/delete/',
+         ProjectStepDeleteView.as_view(), name='project-step-delete'),
 ]

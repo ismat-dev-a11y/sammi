@@ -282,7 +282,7 @@ class ProjectStepDeleteView(generics.DestroyAPIView):
 class ProjectAdminListView(generics.ListAPIView):
     """Admin list view for all projects - accessible to authenticated users"""
     serializer_class = ProjectListSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['difficulty', 'technologies', 'is_published']
     search_fields = ['title', 'description']
@@ -334,7 +334,7 @@ class ProjectAdminListView(generics.ListAPIView):
 class ProjectStepAdminListView(generics.ListAPIView):
     """Admin list view for all project steps - accessible to authenticated users"""
     serializer_class = ProjectStepSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['project']
     ordering_fields = ['order', 'project', 'created_at']

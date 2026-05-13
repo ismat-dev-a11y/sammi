@@ -98,7 +98,11 @@ class User(AbstractUser):
             ("en", "English"),
         ],
     )
-    avatar_url = models.URLField(_("avatar URL"),max_length=500,blank=True,help_text=_("Google profile rasmi yoki foydalanuvchi yuklaganrasm URL i"))
+    avatar_url = models.ImageField(
+        upload_to='avatars/',
+        null=True,
+        blank=True
+    )
     country = models.CharField(_("country"),max_length=250,blank=True,)
 
     # ── Timestamps ─────────────────────────────────────────────

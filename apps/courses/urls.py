@@ -5,7 +5,7 @@ from .views import (
     TechnologyCreateView, TechnologyListView, TechnologyUpdateView, TechnologyDetailView, TechnologyDeleteView, ModuleCreateView, ModuleListView, ModuleUpdateView, ModuleDetailView, ModuleDeleteView,
     LessonCreateView, LessonListView, LessonUpdateView, LessonDetailView, LessonDeleteView,
     LessonProgressCreateView, LessonProgressListView, LessonProgressDetailView, LessonProgressUpdateView,
-    ReviewCreateView, ReviewListView, ReviewUpdateView, ReviewDetailView, ReviewDeleteView
+    ReviewCreateView, ReviewListView, ReviewUpdateView, ReviewDetailView, ReviewDeleteView, EnrollmentCreateView, EnrollmentListView, EnrollmentDetailView, EnrollmentDeleteView
 )
 
 urlpatterns = [
@@ -46,10 +46,10 @@ urlpatterns = [
     path('lessons/delete/<int:pk>/', LessonDeleteView.as_view()),
     
     # Enrollment URLs
-    # path('enrollment/', EnrollmentCreateView.as_view()),
-    # path('enrollment/list', EnrollmentListView.as_view()),
-    # path('enrollment/<int:pk>/', EnrollmentDetailView.as_view()),
-    # path('enrollment/delete/<int:pk>/', EnrollmentDeleteView.as_view()),
+    path('enrollment/', EnrollmentCreateView.as_view()),
+    path('enrollment/list', EnrollmentListView.as_view()),
+    path('enrollment/<int:pk>/', EnrollmentDetailView.as_view()),
+    path('enrollment/delete/<int:pk>/', EnrollmentDeleteView.as_view()),
     
     # LessonProgress URLs
     path('lesson-progress/', LessonProgressCreateView.as_view()),
